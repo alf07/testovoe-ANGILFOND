@@ -1,7 +1,83 @@
 ````markdown
 # README
+## 🐳 Запуск проекта через Docker В корне проекта находится **Dockerfile**, который собирает образ с PHP 8.4, клонирует репозиторий, устанавливает зависимости Composer и запускает встроенный сервер Laravel на порту 8000. ### 1. Сборка образа
+bash
+docker build -t notification-app .
+При необходимости переопределите аргументы сборки (ветка, URL, окружение):
 
-## 🚀 Как запустить проект локально
+bash
+docker build \
+--build-arg BRANCH=main \
+--build-arg APP_ENV=local \
+--build-arg APP_DEBUG=true \
+-t notification-app .
+2. Запуск контейнера
+   Базовый запуск (с SQLite в памяти):
+
+bash
+docker run -p 8000:8000 notification-app
+Приложение станет доступно по адресу http://localhost:8000.
+
+3. Настройка окружения
+   А) Передача переменных через -e
+   bash
+   docker run -p 8000:8000 \
+   -e APP_ENV=production \
+   -e APP_DEBUG=false \
+   -e DB_CONNECTION=sqlite \
+   -e DB_DATABASE=/var/www/html/database/database.sqlite \
+   notification-app
+   Б) Использование постоянного SQLite-файла (монтирование тома)
+   Создайте файл БД на хосте:
+
+bash
+touch database/database.sqlite
+Затем запустите контейнер с монтированием:
+
+bash
+docker run -p 8000:8000 \
+-v $(pwd)/database/database.sqlite:/var/www/html/database/database.sqlite \
+-e DB_CONNECTION=sqlite \
+-e DB_DATABASE=/var/www/html/database/database.sqlite \
+notification-app
+В) Подключение к внешнему MySQL
+Сначала запустите MySQL (например, через Docker):
+
+bash
+docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=laravel -p 3306:3306 mysql:8
+Затем запустите приложение с параметрами подключения:
+
+bash
+docker run -p 8000:8000 \
+-e DB_CONNECTION=mysql \
+-e DB_HOST=host.docker.internal \     # для Linux используйте --add-host=host.docker.internal:host-gateway
+-e DB_PORT=3306 \
+-e DB_DATABASE=laravel \
+-e DB_USERNAME=root \
+-e DB_PASSWORD=root \
+notification-app
+Для Linux вместо host.docker.internal укажите IP-адрес хоста или добавьте флаг --add-host=host.docker.internal:host-gateway.
+
+4. Выполнение миграций и сидов
+   После запуска контейнера выполните команды через docker exec:
+
+bash
+# Получите ID контейнера
+docker ps
+# Выполните миграции
+docker exec -it <container_id> php artisan migrate --seed
+5. Запуск обработчика очереди (для асинхронной отправки)
+   По умолчанию запускается только веб-сервер. Для обработки заданий очереди запустите отдельный контейнер с той же командой, но с queue:work:
+
+bash
+docker run -d notification-app php artisan queue:work
+Либо запустите очередь внутри уже работающего контейнера (в фоне):
+
+bash
+docker exec -d <container_id> php artisan queue:work
+
+
+## 🚀 Как запустить проект без Docker
 
 Проект разработан на **Laravel 13** с использованием **SQLite**, **очередей Laravel** и **Pest** для тестирования.
 

@@ -65,9 +65,9 @@ notification-app
    После запуска контейнера выполните команды через docker exec:
 
 bash
-# Получите ID контейнера
+## Получите ID контейнера
 docker ps
-# Выполните миграции
+## Выполните миграции
 docker exec -it <container_id> php artisan migrate --seed
 5. Запуск обработчика очереди (для асинхронной отправки)
    По умолчанию запускается только веб-сервер.
@@ -79,7 +79,6 @@ docker run -d notification-app php artisan queue:work
 
 bash
 docker exec -d <container_id> php artisan queue:work
-
 
 ## 🚀 Как запустить проект без Docker
 

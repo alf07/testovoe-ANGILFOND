@@ -1,89 +1,173 @@
 # README
 
-## 🐳 Запуск проекта через Docker В корне проекта находится **Dockerfile**,
-который собирает образ с PHP 8.4, клонирует репозиторий, устанавливает зависимости Composer и запускает встроенный сервер Laravel на порту 8000.
+## 🐳 Запуск проекта через Docker
 
-### 1. Сборка образа
+В корне проекта находится **Dockerfile**, который собирает образ с **PHP 8.4**, клонирует репозиторий, устанавливает зависимости **Composer** и запускает встроенный сервер **Laravel** на порту **8000**.
 
-bash
-docker build -t notification-app
+---
 
-При необходимости переопределите аргументы сборки (ветка, URL, окружение):
+### 1. Сборка Docker-образа
 
-bash
+```bash
+docker build -t notification-app .
+```
+
+При необходимости можно переопределить аргументы сборки:
+
+```bash
 docker build \
---build-arg BRANCH=main \
---build-arg APP_ENV=local \
---build-arg APP_DEBUG=true \
--t notification-app 
+  --build-arg BRANCH=main \
+  --build-arg APP_ENV=local \
+  --build-arg APP_DEBUG=true \
+  -t notification-app .
+```
 
-2. Запуск контейнера
-   Базовый запуск (с SQLite в памяти):
+---
 
-bash
+### 2. Запуск контейнера
+
+#### Базовый запуск (SQLite)
+
+```bash
 docker run -p 8000:8000 notification-app
+```
 
-Приложение станет доступно по адресу http://localhost:8000.
+После запуска приложение будет доступно по адресу:
 
-3. Настройка окружения
-   А) Передача переменных через -e
-   bash
-   docker run -p 8000:8000 \
-   -e APP_ENV=production \
-   -e APP_DEBUG=false \
-   -e DB_CONNECTION=sqlite \
-   -e DB_DATABASE=/var/www/html/database/database.sqlite \
-   notification-app
-   
-   Б) Использование постоянного SQLite-файла (монтирование тома)
-   Создайте файл БД на хосте:
+```text
+http://localhost:8000
+```
 
-bash
+---
+
+### 3. Настройка окружения
+
+#### Вариант 1. Передача переменных окружения
+
+```bash
+docker run -p 8000:8000 \
+  -e APP_ENV=production \
+  -e APP_DEBUG=false \
+  -e DB_CONNECTION=sqlite \
+  -e DB_DATABASE=/var/www/html/database/database.sqlite \
+  notification-app
+```
+
+---
+
+#### Вариант 2. Использование постоянного SQLite-файла
+
+Создайте файл базы данных:
+
+```bash
 touch database/database.sqlite
-Затем запустите контейнер с монтированием:
+```
 
-bash
+Запустите контейнер с монтированием файла:
+
+```bash
 docker run -p 8000:8000 \
--v $(pwd)/database/database.sqlite:/var/www/html/database/database.sqlite \
--e DB_CONNECTION=sqlite \
--e DB_DATABASE=/var/www/html/database/database.sqlite \
-notification-app
-В) Подключение к внешнему MySQL
-Сначала запустите MySQL (например, через Docker):
+  -v $(pwd)/database/database.sqlite:/var/www/html/database/database.sqlite \
+  -e DB_CONNECTION=sqlite \
+  -e DB_DATABASE=/var/www/html/database/database.sqlite \
+  notification-app
+```
 
-bash
-docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=laravel -p 3306:3306 mysql:8
-Затем запустите приложение с параметрами подключения:
+---
 
-bash
+#### Вариант 3. Подключение к внешнему MySQL
+
+Сначала запустите MySQL:
+
+```bash
+docker run -d \
+  --name mysql \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e MYSQL_DATABASE=laravel \
+  -p 3306:3306 \
+  mysql:8
+```
+
+Затем запустите приложение:
+
+```bash
 docker run -p 8000:8000 \
--e DB_CONNECTION=mysql \
--e DB_HOST=host.docker.internal \     # для Linux используйте --add-host=host.docker.internal:host-gateway
--e DB_PORT=3306 \
--e DB_DATABASE=laravel \
--e DB_USERNAME=root \
--e DB_PASSWORD=root \
-notification-app
-Для Linux вместо host.docker.internal укажите IP-адрес хоста или добавьте флаг --add-host=host.docker.internal:host-gateway.
+  -e DB_CONNECTION=mysql \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=3306 \
+  -e DB_DATABASE=laravel \
+  -e DB_USERNAME=root \
+  -e DB_PASSWORD=root \
+  notification-app
+```
 
-4. Выполнение миграций и сидов
-   После запуска контейнера выполните команды через docker exec:
+> **Для Linux** вместо `host.docker.internal` используйте IP-адрес хоста или добавьте параметр:
+>
+> ```bash
+> --add-host=host.docker.internal:host-gateway
+> ```
 
-bash
-## Получите ID контейнера
+---
+
+### 4. Выполнение миграций и заполнение тестовыми данными
+
+Получите идентификатор контейнера:
+
+```bash
 docker ps
-## Выполните миграции
+```
+
+Выполните миграции и сиды:
+
+```bash
 docker exec -it <container_id> php artisan migrate --seed
-5. Запуск обработчика очереди (для асинхронной отправки)
-   По умолчанию запускается только веб-сервер.
-   Для обработки заданий очереди запустите отдельный контейнер с той же командой, но с queue:work:
+```
 
-bash
+---
+
+### 5. Запуск обработчика очереди
+
+По умолчанию контейнер запускает только веб-сервер.
+
+#### Отдельный контейнер
+
+```bash
 docker run -d notification-app php artisan queue:work
-Либо запустите очередь внутри уже работающего контейнера (в фоне):
+```
 
-bash
+#### Или внутри уже работающего контейнера
+
+```bash
 docker exec -d <container_id> php artisan queue:work
+```
+
+---
+
+### 📌 Полезные команды
+
+Просмотр запущенных контейнеров:
+
+```bash
+docker ps
+```
+
+Остановка контейнера:
+
+```bash
+docker stop <container_id>
+```
+
+Просмотр логов:
+
+```bash
+docker logs -f <container_id>
+```
+
+Вход внутрь контейнера:
+
+```bash
+docker exec -it <container_id> bash
+```
 
 ## 🚀 Как запустить проект без Docker
 
@@ -357,3 +441,4 @@ php artisan optimize
 - PHPUnit
 - Docker
 - Composer
+---

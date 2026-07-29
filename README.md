@@ -1,4 +1,3 @@
-````markdown
 # README
 
 ## 🐳 Запуск проекта через Docker В корне проекта находится **Dockerfile**,

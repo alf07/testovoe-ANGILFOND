@@ -353,4 +353,3 @@ php artisan optimize
 - PHPUnit
 - Docker
 - Composer
-````

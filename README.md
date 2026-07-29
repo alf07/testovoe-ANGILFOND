@@ -4,8 +4,10 @@
 который собирает образ с PHP 8.4, клонирует репозиторий, устанавливает зависимости Composer и запускает встроенный сервер Laravel на порту 8000.
 
 ### 1. Сборка образа
+
 bash
-docker build -t notification-app .
+docker build -t notification-app
+
 При необходимости переопределите аргументы сборки (ветка, URL, окружение):
 
 bash
@@ -13,12 +15,14 @@ docker build \
 --build-arg BRANCH=main \
 --build-arg APP_ENV=local \
 --build-arg APP_DEBUG=true \
--t notification-app .
+-t notification-app 
+
 2. Запуск контейнера
    Базовый запуск (с SQLite в памяти):
 
 bash
 docker run -p 8000:8000 notification-app
+
 Приложение станет доступно по адресу http://localhost:8000.
 
 3. Настройка окружения
@@ -30,6 +34,7 @@ docker run -p 8000:8000 notification-app
    -e DB_CONNECTION=sqlite \
    -e DB_DATABASE=/var/www/html/database/database.sqlite \
    notification-app
+   
    Б) Использование постоянного SQLite-файла (монтирование тома)
    Создайте файл БД на хосте:
 

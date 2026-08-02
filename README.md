@@ -1,3 +1,6 @@
+<img width="3750" height="1969" alt="testovoe-ANGILFOND" src="https://github.com/user-attachments/assets/39f83ff5-de91-4c46-98d0-da7e6295a42a" />
+
+
 # README
 
 ## 🐳 Запуск проекта через Docker
